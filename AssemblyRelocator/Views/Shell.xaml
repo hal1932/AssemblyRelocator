@@ -1,0 +1,118 @@
+﻿<Window x:Class="AssemblyRelocator.Views.Shell"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AssemblyRelocator.Views"
+        xmlns:converters="clr-namespace:AssemblyRelocator.Converters"
+        mc:Ignorable="d"
+        xmlns:prism="http://prismlibrary.com/"
+        prism:ViewModelLocator.AutoWireViewModel="True"
+        Title="Shell" Height="800" Width="800">
+
+    <Window.Resources>
+        <converters:GetFileName x:Key="GetFileName"/>
+        <converters:IsNotNull x:Key="IsNotNull"/>
+        <converters:AssemblyNames x:Key="AssemblyNames"/>
+
+        <Style TargetType="FrameworkElement">
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type FrameworkElement}}">
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="2"/>
+        </Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type FrameworkElement}}"/>
+        <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type FrameworkElement}}"/>
+        <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type FrameworkElement}}"/>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+
+        <GroupBox Grid.Row="1" Header="アセンブリ" VerticalAlignment="Center" Margin="3">
+            <StackPanel Orientation="Vertical">
+                <TextBox Text="{Binding AssemblyPath}"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="再読み込み" Command="{Binding ReloadCommand}"/>
+                    <Button Content="フォルダを開く" Command="{Binding OpenCommand}" CommandParameter="{x:Null}"/>
+                    <Button Content="ILSpy で開く" Command="{Binding OpenWithILSpyCommand}" CommandParameter="{x:Null}"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="参照アセンブリ">
+            <DataGrid ItemsSource="{Binding ReferencedAssemblies}"
+                      AutoGenerateColumns="False"
+                      CanUserSortColumns="True">
+
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="フォルダを開く"
+                                  Command="{Binding PlacementTarget.DataContext.OpenCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"
+                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="絶対パスをコピー"
+                                  Command="{Binding PlacementTarget.DataContext.CopyPathCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"
+                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"/>
+                        <Separator/>
+                        <MenuItem Header="ILSpyで開く"
+                                  Command="{Binding PlacementTarget.DataContext.OpenWithILSpyCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"
+                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"/>
+                        <Separator/>
+                        <MenuItem Header="配置場所を変更する"
+                                  Command="{Binding PlacementTarget.DataContext.RelocateCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"
+                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource FindAncestor, AncestorType=ContextMenu}}"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridCell">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Exception, Converter={StaticResource IsNotNull}}" Value="True">
+                                <Setter Property="Foreground" Value="Red"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ReferenceDepth}" Value="1">
+                                <Setter Property="Foreground" Value="Blue"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Resources>
+
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="アセンブリ" CanUserSort="True" SortMemberPath="FileName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FileName}" ToolTip="{Binding FullName}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="被参照" CanUserSort="True" SortMemberPath="Sources.Count">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border HorizontalAlignment="Stretch" ToolTip="{Binding Sources, Converter={StaticResource AssemblyNames}}">
+                                    <TextBlock Text="{Binding Sources.Count}" TextAlignment="Right"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="Location" CanUserSort="True" SortMemberPath="Location">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Location}" ToolTip="{Binding LocationDetails}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+                
+            </DataGrid>
+
+        </GroupBox>
+    </Grid>
+
+</Window>
